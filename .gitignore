@@ -2,3 +2,5 @@ Data/ExPW/*
 __pycache__/*
 tensorboard_logs/*
 checkpoints/*
+.DS_Store/*
+*.log
