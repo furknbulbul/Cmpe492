@@ -1,0 +1,13 @@
+[2024/04/07 18:00:12] - Using device: cpu
+[2024/04/07 18:00:12] - Loading data from Data/FER2013_small
+[2024/04/07 18:00:12] - Train set length: 2016
+[2024/04/07 18:00:12] - Validation set length: 784
+[2024/04/07 18:00:12] - Test set length: 700
+[2024/04/07 18:00:13] - Epoch 1
+[2024/04/07 18:00:40] - Training accuracy: 0.145337
+[2024/04/07 18:00:40] - Training loss: 3.259621
+[2024/04/07 18:00:42] - Validation accuracy: 0.181122
+[2024/04/07 18:00:42] - Validation loss: 1.958099
+[2024/04/07 18:00:42] - Epoch time: 29.559353
+[2024/04/07 18:00:42] - Current time: 29.559353
+[2024/04/07 18:00:43] - Epoch 2

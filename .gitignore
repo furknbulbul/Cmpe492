@@ -1,0 +1,4 @@
+Data/ExPW/*
+__pycache__/*
+tensorboard_logs/*
+checkpoints/*
