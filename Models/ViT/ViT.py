@@ -15,9 +15,6 @@ import torch
 # 3.2.2. multi-layer perceptron
 
 
-
-
-
 class ViT(nn.Module):
     def __init__(self,
                  img_size=48, # Training resolution from Table 3 in ViT paper

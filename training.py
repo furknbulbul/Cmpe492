@@ -3,17 +3,15 @@ import numpy as np
 import torch.nn.functional as F
 
 
-class CustomTrainer:
+class ImageTrainer:
 
-    def __init__(self, train_len, val_len, test_len):
+    def __init__(self):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.train_len = train_len
-        self.val_len = val_len
-        self.test_len = test_len
+   
 
     def train_model(self, model, data_loader, criterion, optimizer):
         correct = 0
-        losses = []
+        running_loss = 0.0
         model.train()
 
         for i, (images, labels) in enumerate(data_loader):
@@ -29,9 +27,12 @@ class CustomTrainer:
             optimizer.step()
             optimizer.zero_grad()
 
-            losses.append(loss.item())
+            running_loss += loss.item()
 
-        return correct/self.train_len, np.mean(losses)
+            if i % 100 == 0:
+                print(f"Batch {i}, Loss: {loss.item()}, Accuracy: {correct / ((i+1) * images.size(0))}")
+
+        return correct/len(data_loader.dataset), running_loss/len(data_loader) 
 
     def val_model(self, model, data_loader, criterion, validation = True):
         model.eval()
@@ -51,7 +52,7 @@ class CustomTrainer:
             else:
                 return correct/self.test_len, np.mean(losses)
 
-    def get_predictions(self, model, data_loader):
+    def test_model(self, model, data_loader):
         model.eval()
         predictions = []
         prediction_probs = []

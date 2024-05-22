@@ -1,6 +1,6 @@
 from utils import *
 from dataset import *
-from Models.VGGNet import *
+from models.VGGNet import *
 from training import *
 import torch
 from torch.utils.data import DataLoader, random_split
@@ -8,6 +8,9 @@ from torch.utils.tensorboard import SummaryWriter
 import argparse
 from timeit import default_timer as timer
 from torchvision.transforms import transforms
+from models.multimodal import Multimodal
+from multimodal_trainer import MultimodalTrainer
+from multimodal_dataset import MultimodalDataset
 
 
 parser = argparse.ArgumentParser()
@@ -24,8 +27,8 @@ parser.add_argument("--log_file", default="output.log", type=str)
 parser.add_argument("-o", "--optimizer", default="adam", type=str)
 parser.add_argument("-m", "--config", default="vgg11", type=str)
 parser.add_argument("-d", "--dropout", default=0.2, type=float)
-parser.add_argument("-a", "--augmentation", default=True, type=bool)
-parser.add_argument("-sc", "--scheduler", default = "none", type=str, help="reduce or cos or none")
+parser.add_argument("-a", "--augmentation", action= "store_true", help = "use data augmentation")
+parser.add_argument("-sc", "--scheduler", default = "none", type=str, help="[reduce, cos]")
 parser.add_argument("-M", "--model", default = 'vgg', type=str)
 
 best_accuracy = 0
@@ -77,9 +80,12 @@ def main():
             ]
         )
 
-    
-    dataset_train = dataset(root=ROOT, phase='train', transform=None)
-    dataset_test = dataset(root=ROOT, phase='test', transform=None)
+    if MODEL == 'vgg':
+        dataset_train = dataset(root=ROOT, phase='train', transform=None)
+        dataset_test = dataset(root=ROOT, phase='test', transform=None)
+    if MODEL == 'multimodal':
+        dataset_train = MultimodalDataset(root=ROOT, phase='train', transform=None)
+        dataset_test = MultimodalDataset(root=ROOT, phase='test', transform=None)
     
 
 
@@ -91,6 +97,7 @@ def main():
     
     dataset_train.transform = transform
     dataset_val.transform = None
+    
     train_loader = DataLoader(dataset_train, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True)
     val_loader = DataLoader(dataset_val, batch_size=BATCH_SIZE, shuffle=True,  pin_memory=True)
     test_loader = DataLoader(dataset_test, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True)
@@ -101,11 +108,16 @@ def main():
 
     if MODEL == 'vgg':
         model = VGGNet(config=CONFIG, dropout=DROPOUT)
+    if MODEL == 'multimodal':
+        model = Multimodal(hidden_dim= 64, output_dim = 16) # TODO: think about dimensions
 
-    write_graph(writer, model, input_tensor=torch.rand(1, 1, 48, 48))
-    model.to(device)
-    criterion = torch.nn.CrossEntropyLoss()
+    cross_entropy = torch.nn.CrossEntropyLoss()
+    margin_loss = torch.nn.MarginRankingLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay = L2) if OPTIMIZER == "adam" else torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9)
+    #write_graph(writer, model, input_tensor=torch.rand(1, 1, 48, 48))
+    model.to(device)
+
+    
 
 
     if SCHEDULER == "reduce":
@@ -113,7 +125,13 @@ def main():
     if SCHEDULER == "cos":
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS)
 
-    trainer = CustomTrainer(train_len=len(dataset_train), val_len=len(dataset_val), test_len=len(dataset_test))
+    if MODEL == 'vgg':
+        trainer = ImageTrainer()
+    if MODEL == 'multimodal':
+        trainer = MultimodalTrainer()
+        criterion = margin_loss
+
+
     start = timer()
     pre = start
     for epoch in range(1, EPOCHS + 1):
@@ -124,7 +142,7 @@ def main():
         logger.info("Training accuracy: %f", train_acc)
         logger.info("Training loss: %f", train_loss)
 
-        val_acc, val_loss = trainer.val_model(model, val_loader, criterion, optimizer)
+        val_acc, val_loss = trainer.val_model(model, val_loader, criterion)
         logger.info("Validation accuracy: %f", val_acc)
         logger.info("Validation loss: %f", val_loss)
 
@@ -154,9 +172,9 @@ def main():
     logger.info("Best accuracy: %f", best_accuracy)
     logger.info("Total time: %f", timer() - start)
 
-    pred, probs, corrects = trainer.get_predictions(model, data_loader=test_loader)
+    #pred, probs, corrects = trainer.test_model(model, data_loader=test_loader)
 
-    write_pr_curve(writer, corrects, pred)
+    #write_pr_curve(writer, corrects, pred)
     writer.close()
 
 
