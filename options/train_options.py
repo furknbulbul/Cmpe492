@@ -14,3 +14,6 @@ class TrainOptions(BaseOptions):
         parser.add_argument("-sc", "--scheduler", default = "none", type=str, help="[reduce, cos]")
 
         self.isTrain = True
+        return parser
+    
+        

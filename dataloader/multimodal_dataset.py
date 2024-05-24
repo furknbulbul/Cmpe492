@@ -12,10 +12,10 @@ class MultimodalDataset(Dataset):
         self.phase = phase
         self.transform = transform
         self.target_transform = target_transform
-        self.tokenize = get_tokenizer("basic_english")
+        self.tokenizer = get_tokenizer("basic_english")
         self.glove = GloVe(name='6B', dim=100)
         self.labels_map = {'angry': 0, 'disgust': 1, 'fear': 2, 'happy': 3, 'sad': 4, 'surprise': 5, 'neutral': 6}
-
+        self.texts = "angry disgust fear happy sad surprise neutral"
         if self.phase == "train":
             self.phase_root = os.path.join(root, 'train')
         elif self.phase == "test":
@@ -35,11 +35,13 @@ class MultimodalDataset(Dataset):
         return sum(lens)
 
     def __getitem__(self, idx):
-        
         img_path, text = self.data[idx]
         label = self.labels_map[text]
-        indices = torch.tensor([self.glove.stoi[word] for word in self.tokenize(text)])
+        indices = torch.tensor([self.glove.stoi[word] for word in self.tokenizer(self.texts)])
+        #indices[0], indices[label] = indices[label], indices[0] # swap the first word with the label word
+        # indices = torch.tensor([self.glove.stoi[text]])
         image = read_image(img_path).to(torch.float32)
+        
         if self.transform:
             image = self.transform(image)
         if self.target_transform:

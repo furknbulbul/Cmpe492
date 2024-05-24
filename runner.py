@@ -1,16 +1,17 @@
 from utils import *
-from dataset import *
+from dataloader.dataset import *
 from models.VGGNet import *
-from training import *
+from trainer.training import *
 import torch
 from torch.utils.data import DataLoader, random_split
 from torch.utils.tensorboard import SummaryWriter
 import argparse
 from timeit import default_timer as timer
 from torchvision.transforms import transforms
-from models.multimodal import Multimodal
-from multimodal_trainer import MultimodalTrainer
-from multimodal_dataset import MultimodalDataset
+from models.multimodal.multimodal import Multimodal
+from trainer.multimodal_trainer import MultimodalTrainer
+from dataloader.multimodal_dataset import MultimodalDataset
+from loss.euclidian_distance import EuclideanDistanceLoss
 
 
 parser = argparse.ArgumentParser()
@@ -109,7 +110,8 @@ def main():
     if MODEL == 'vgg':
         model = VGGNet(config=CONFIG, dropout=DROPOUT)
     if MODEL == 'multimodal':
-        model = Multimodal(hidden_dim= 64, output_dim = 16) # TODO: think about dimensions
+        model = Multimodal(hidden_dim= 64, output_dim = 32) # TODO: think about dimensions
+
 
     cross_entropy = torch.nn.CrossEntropyLoss()
     margin_loss = torch.nn.MarginRankingLoss()
@@ -129,7 +131,7 @@ def main():
         trainer = ImageTrainer()
     if MODEL == 'multimodal':
         trainer = MultimodalTrainer()
-        criterion = margin_loss
+        criterion = EuclideanDistanceLoss()
 
 
     start = timer()

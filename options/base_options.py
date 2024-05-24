@@ -51,5 +51,10 @@ class Options():
         message += '----------------- End -------------------'
         print(message)
 
+    def parse(self):
+        opt = self.gather_options()
+        opt.isTrain = self.isTrain
+        return opt
+
 
 
