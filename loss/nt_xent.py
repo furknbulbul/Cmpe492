@@ -1,6 +1,8 @@
 import torch
 import torch.nn.functional as F
 
+#https://github.com/edreisMD/ConVIRT-pytorch/
+
 class NTXentLoss(torch.nn.Module):
 
     def __init__(self, device, batch_size, temperature, use_cosine_similarity, alpha_weight):

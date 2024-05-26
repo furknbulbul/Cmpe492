@@ -37,9 +37,9 @@ class MultimodalDataset(Dataset):
     def __getitem__(self, idx):
         img_path, text = self.data[idx]
         label = self.labels_map[text]
-        indices = torch.tensor([self.glove.stoi[word] for word in self.tokenizer(self.texts)])
+
         #indices[0], indices[label] = indices[label], indices[0] # swap the first word with the label word
-        # indices = torch.tensor([self.glove.stoi[text]])
+        indices = torch.tensor([self.glove.stoi[text]])
         image = read_image(img_path).to(torch.float32)
         
         if self.transform:

@@ -11,16 +11,16 @@ configs = {
 
 
 class VGGNet(nn.Module):
-    def __init__(self, num_classes=7, config='vgg11', dropout=0.2, isClassifier=True):
+    def __init__(self, num_classes=7, config='vgg11', dropout=0.2, is_classifier=True):
         super(VGGNet, self).__init__()
         self.config = configs[config]
         self.features = self.make_layers()
-        self.classifier = None
-        self.isClassifier = isClassifier
-        if isClassifier:
-            self.classifier =  nn.Sequential(nn.Linear(512 * 3 * 3, 4096), nn.Dropout(dropout), nn.ReLU(True),
-                                        nn.Linear(4096, 4096), nn.Dropout(dropout), nn.ReLU(True),
-                                        nn.Linear(4096, num_classes))
+        self.is_classifier = is_classifier
+        self.classifier =  nn.Sequential(nn.Linear(512 * 3 * 3, 4096), nn.Dropout(dropout), nn.ReLU(True),
+                                    nn.Linear(4096, 4096), nn.Dropout(dropout), nn.ReLU(True),
+                                    nn.Linear(4096, num_classes))
+        
+        
 
     def make_layers(self):
         layers = []
@@ -39,7 +39,7 @@ class VGGNet(nn.Module):
 
     def forward(self, x):
         x = self.features(x)
-        if not self.isClassifier:
+        if not self.is_classifier:
             return x
 
         x = x.view(-1, 512 * 3 * 3)
