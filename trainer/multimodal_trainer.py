@@ -140,7 +140,7 @@ class MultimodalTrainer(ImageTrainer):
         return predictions, prediction_probs, correct_values, accuracy
     
 
-
+    
     
 
     

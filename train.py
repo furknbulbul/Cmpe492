@@ -12,6 +12,8 @@ from models.VGGNet import VGGNet
 from models.multimodal.multimodal import Multimodal
 import torch.nn as nn
 from loss.nt_xent import NTXentLoss
+from sklearn.metrics import confusion_matrix
+import seaborn as sns  
 
 
 
@@ -103,11 +105,12 @@ def train_vgg():
 
 
     
-    if args.use_wandb:
-        
-        torch.onnx.export(model, example_image, f"vgg-trained.onnx")
-        wandb.save(f"vgg-trained.onnx")
-
+    upload_wandb("vgg-done", model, (example_image), args)
+    pred, probs, corrects, test_acc = trainer.test_model(model, test_loader)
+    logger.info("Test Accuracy: %f", test_acc)
+    logger.test_log_wandb(test_acc)
+    cm = confusion_matrix(corrects, pred)
+    save_confusion_matrix(cm, args)
     wandb.finish()
 
 
@@ -132,12 +135,9 @@ def train_pretrain():
             upload_wandb(f"pretrain_{epoch}", model, (example_image,example_text), args)
             
     
-    print("uploadging to wandb")
     upload_wandb("pretrain-done", model, (example_image,example_text), args)
 
-    pred, probs, corrects, test_acc = trainer.test_model(model, test_loader)
-    logger.info("Test Accuracy: %f", test_acc)
-    logger.test_log_wandb(test_acc)
+    
    
 
     wandb.finish()
@@ -173,6 +173,8 @@ def train_classifier():
     pred, probs, corrects, test_acc = trainer.test_model(model, test_loader)
     logger.info("Test Accuracy: %f", test_acc)
     logger.test_log_wandb(test_acc)
+    cm = confusion_matrix(corrects, pred)
+    save_confusion_matrix(cm, args)
     wandb.finish()
 
 
@@ -205,7 +207,8 @@ def train_finetune():
     pred, probs, corrects, test_acc = trainer.test_model(model, test_loader)
     logger.info("Test Accuracy: %f", test_acc)
     logger.test_log_wandb(test_acc)
-        
+    cm = confusion_matrix(corrects, pred)
+    save_confusion_matrix(cm, args)
     wandb.finish()
 
 if args.model == "vgg":

@@ -73,3 +73,19 @@ def upload_wandb(name, model, input, args):
         artifact = wandb.Artifact(name, type='model')
         artifact.add_file(name + ".pth")
         wandb.log_artifact(artifact)
+
+
+def save_confusion_matrix(cm, args):
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    if args.use_wandb:
+        class_namesf = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
+
+        fig = plt.figure(figsize=(10, 8))
+        sns.heatmap(cm, annot=True, fmt="d", cmap='Blues', xticklabels=class_names, yticklabels=class_names)
+        plt.xlabel('Predicted')
+        plt.ylabel('True')
+        plt.title('Confusion Matrix')
+
+        wandb.log({"Confusion Matrix": wandb.Image(fig)})
+        plt.close(fig)
