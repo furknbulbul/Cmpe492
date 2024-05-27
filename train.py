@@ -37,14 +37,14 @@ nt_xent = NTXentLoss(device, args.batch, args.ntxnet_temp, use_cosine_similarity
 
 if args.model == "vgg":
     dataset_train = dataset(root = args.data_root, phase = 'train', transform = transform)
-    dataset_test = dataset(root = args.data_root, phase = 'test', transform = transform)
+    dataset_test = dataset(root = args.data_root, phase = 'test', transform = None)
     model = VGGNet(config = args.vgg_config, num_classes = 7, dropout = args.dropout)
     trainer = ImageTrainer()
 
 if args.model == "multimodal":
     print("Using multimodal model")
     dataset_train = MultimodalDataset(root = args.data_root, phase = 'train', transform = transform)
-    dataset_test = MultimodalDataset(root = args.data_root, phase = 'test', transform = transform)
+    dataset_test = MultimodalDataset(root = args.data_root, phase = 'test', transform = None)
     model = Multimodal(hidden_dim = args.mlp_hidden_dim, output_dim = args.mlp_output_dim, num_classes = 7, dropout = args.dropout)
     print(f"Training dataset size: {len(dataset_train)}")
     print(f"Testing dataset size: {len(dataset_test)}")
@@ -68,6 +68,7 @@ test_length = len(dataset_test)
 
 dataset_train, dataset_val = random_split(dataset_train, [train_length, val_length],
                                               generator=torch.Generator().manual_seed(42))
+dataset_val.transform = None
 train_loader = DataLoader(dataset_train, batch_size=args.batch, shuffle=True, pin_memory=True)
 val_loader = DataLoader(dataset_val, batch_size=args.batch, shuffle=True,  pin_memory=True)
 test_loader = DataLoader(dataset_test, batch_size=args.batch, shuffle=True, pin_memory=True)
@@ -98,16 +99,7 @@ def train_vgg():
 
         if epoch % args.save_freq == 0:
             #torch.save(model.state_dict(), path + f"/vgg_{epoch}.pth")
-            if args.use_wandb:
-                try:
-                    #wandb.save(path + f"/vgg_{epoch}.pth")
-                    torch.onnx.export(model, example_image, f"vgg{epoch}.onnx")
-                    wandb.save(f"vgg{epoch}.onnx")
-                    artifact = wandb.Artifact('vgg-model-weights', type='model')
-                    artifact.add_file(f"vgg{epoch}.onnx")
-                    wandb.log_artifact(artifact)
-                except:
-                    pass
+            upload_wandb(f"pretrain_{epoch}", model, (example_image), args)
 
 
     
@@ -122,9 +114,8 @@ def train_vgg():
      
 def train_pretrain():
     example_image = torch.rand(1, 1, 48, 48).to(device)
-    example_text = torch.randint(0, 100, (1, 100)).to(device)
+    example_text = torch.randint(0, 100, (1,)).to(device)
     if args.use_wandb:
-        print(wandb_config)
         wandb.init(project=args.wandb_project, config=wandb_config, name = "pretrain")
         wandb.watch(model)
 
@@ -138,26 +129,22 @@ def train_pretrain():
 
         if epoch % args.save_freq == 0:
             #torch.save(model.state_dict(), path + f"/vgg_{epoch}.pth")
-            if args.use_wandb:
-                
-                #wandb.save(path + f"/vgg_{epoch}.pth")
-                torch.onnx.export(model, (example_image,example_text), f"pretrain{epoch}.onnx")
-                wandb.save(f"pretrain{epoch}.onnx")
-                artifact = wandb.Artifact('pretrain-model-weights', type='model')
-                artifact.add_file(f"pretrain{epoch}.onnx")
-                wandb.log_artifact(artifact)
-    if args.use_wandb:
-        torch.onnx.export(model, (example_image,example_text), f"pretrain-done.onnx")
-        wandb.save(f"pretrain-done.onnx")
-        artifact = wandb.Artifact('pretrain-model-weights', type='model')
-        artifact.add_file(f"pretrain-done.onnx")
-        wandb.log_artifact(artifact)
+            upload_wandb(f"pretrain_{epoch}", model, (example_image,example_text), args)
+            
+    
+    print("uploadging to wandb")
+    upload_wandb("pretrain-done", model, (example_image,example_text), args)
+
+    pred, probs, corrects, test_acc = trainer.test_model(model, test_loader)
+    logger.info("Test Accuracy: %f", test_acc)
+    logger.test_log_wandb(test_acc)
+   
 
     wandb.finish()
                 
 def train_classifier():
     example_image = torch.rand(1, 1, 48, 48).to(device)
-    example_text = torch.randint(0, 100, (1, 100)).to(device)
+    example_text = torch.randint(0, 100, (1,)).to(device)
     model.use_classifier = True
     model.freeze_cnn = True
     model.reset_classifier()
@@ -177,23 +164,15 @@ def train_classifier():
 
         if epoch % args.save_freq == 0:
             #torch.save(model.state_dict(), path + f"/vgg_{epoch}.pth")
-            if args.use_wandb:
-                
-                #wandb.save(path + f"/vgg_{epoch}.pth")
-                torch.onnx.export(model, (example_image,example_text), f"classifer{epoch}.onnx")
-                wandb.save(f"classifier{epoch}.onnx")
-                artifact = wandb.Artifact('classifier-model-weights', type='model')
-                artifact.add_file(f"classifier{epoch}.onnx")
-                wandb.log_artifact(artifact)
+            upload_wandb(f"classifier_{epoch}", model, (example_image,example_text), args)
+        
 
-    if args.use_wandb:
-        torch.onnx.export(model, (example_image,example_text), f"classifier-done.onnx")
-        wandb.save(f"classifier-done.onnx")
-        artifact = wandb.Artifact('classifier-model-weights', type='model')
-        artifact.add_file(f"classifier-done.onnx")
-        wandb.log_artifact(artifact)
+    upload_wandb("classifier-done", model, (example_image,example_text), args)
 
-
+    # test 
+    pred, probs, corrects, test_acc = trainer.test_model(model, test_loader)
+    logger.info("Test Accuracy: %f", test_acc)
+    logger.test_log_wandb(test_acc)
     wandb.finish()
 
 
@@ -201,7 +180,7 @@ def train_classifier():
 
 def train_finetune():
     example_image = torch.rand(1, 1, 48, 48).to(device)
-    example_text = torch.randint(0, 100, (1, 100)).to(device)
+    example_text = torch.randint(0, 100, (1,)).to(device)
     model.use_classifier = True
     model.freeze_cnn = False
     model.reset_classifier()
@@ -219,24 +198,18 @@ def train_finetune():
 
         if epoch % args.save_freq == 0:
             #torch.save(model.state_dict(), path + f"/vgg_{epoch}.pth")
-            if args.use_wandb:
+            upload_wandb(f"finetune_{epoch}", model, (example_image,example_text), args)
                 
-                #wandb.save(path + f"/vgg_{epoch}.pth")
-                torch.onnx.export(model, (example_image,example_text), f"finetune{epoch}.onnx")
-                wandb.save(f"finetune{epoch}.onnx")
-                artifact = wandb.Artifact('finetune-model-weights', type='model')
-                artifact.add_file(f"finetune{epoch}.onnx")
-                wandb.log_artifact(artifact)
-
-    if args.use_wandb:
-        torch.onnx.export(model, (example_image,example_text), f"finetune-done.onnx")
-        wandb.save(f"finetune-done.onnx")
-        artifact = wandb.Artifact('finetune-model-weights', type='model')
-        artifact.add_file(f"finetune-done.onnx")
-        wandb.log_artifact(artifact)
+    
+    upload_wandb("finetune-done", model, (example_image,example_text), args)
+    pred, probs, corrects, test_acc = trainer.test_model(model, test_loader)
+    logger.info("Test Accuracy: %f", test_acc)
+    logger.test_log_wandb(test_acc)
         
     wandb.finish()
 
+if args.model == "vgg":
+    train_vgg()
 
 if args.train_pipeline:
     train_pretrain()

@@ -53,9 +53,9 @@ def get_args():
     return parser.parse_args()
 
 def get_pipeline_args(parser):
-    parser.add_argument("--pretrain_epoch", default=2, type=int)
-    parser.add_argument("--classifier_epoch", default=2, type=int)
-    parser.add_argument("--finetune_epoch", default=2, type=int)
+    parser.add_argument("--pretrain_epoch", default=1, type=int)
+    parser.add_argument("--classifier_epoch", default=1, type=int)
+    parser.add_argument("--finetune_epoch", default=1, type=int)
     parser.add_argument("--train_pipeline", action="store_true")
     parser.add_argument("--pretrain", action="store_true")
     parser.add_argument("--classifier", action="store_true")

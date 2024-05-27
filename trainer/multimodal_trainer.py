@@ -112,6 +112,32 @@ class MultimodalTrainer(ImageTrainer):
         accuracy = correct / len(data_loader.dataset)
         return accuracy, running_loss / len(data_loader)
     
+
+    def test_model(self, model, data_loader):
+        model.eval()
+        predictions = []
+        prediction_probs = []
+        correct_values = []
+        correct_predictions = 0
+
+        with torch.no_grad():
+            for images, texts, labels in data_loader:
+                images = images.to(self.device)
+                texts = texts.to(self.device)
+                labels = labels.to(self.device)
+
+                logits = model(images, texts)
+                _, predicted = torch.max(logits, 1)
+                probs = torch.nn.functional.softmax(logits, dim=1)
+
+                correct_predictions += torch.sum(predicted == labels).item()
+
+                predictions.extend(predicted)
+                prediction_probs.extend(probs)
+                correct_values.extend(labels)
+
+        accuracy = correct_predictions / len(data_loader.dataset)
+        return predictions, prediction_probs, correct_values, accuracy
     
 
 

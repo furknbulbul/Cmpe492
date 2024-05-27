@@ -63,3 +63,13 @@ def save_checkpoint(state, epoch, is_best, save_path, save_freq=10):
 def save_model(model, save_path):
     torch.save(model.state_dict(), save_path)
 
+
+
+def upload_wandb(name, model, input, args):
+    if args.use_wandb:
+        # torch.onnx.export(model, input, name + ".onnx")
+        # wandb.save(name + ".onnx")
+        torch.save(model.state_dict(), name + ".pth")
+        artifact = wandb.Artifact(name, type='model')
+        artifact.add_file(name + ".pth")
+        wandb.log_artifact(artifact)

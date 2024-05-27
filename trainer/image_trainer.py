@@ -70,5 +70,6 @@ class ImageTrainer:
         predictions = torch.stack(predictions).to(self.device)
         prediction_probs = torch.stack(prediction_probs).to(self.device)
         correct_values = torch.stack(correct_values).to(self.device)
-        return predictions, prediction_probs, correct_values
+        acc = (predictions == correct_values).sum().item() / len(correct_values)
+        return predictions, prediction_probs, correct_values, acc
 
