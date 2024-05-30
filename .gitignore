@@ -103,6 +103,7 @@ dmypy.json
 
 # Data folders you might use in your project
 data/
+Data/
 
 datasets/
 logs/
