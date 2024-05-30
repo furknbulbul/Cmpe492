@@ -9,10 +9,10 @@ def setup():
     path = create_checkpoint_path(args)
     logger = Logger(logfile=args.log_file, use_wandb=args.use_wandb)
     wandb_config = create_wandb_config(args)
-    if args.use_wandb:
-        with open('secret.json') as config_file:
-            config = json.load(config_file)
-            os.environ["WANDB_API_KEY"] = config["WANDB_API_KEY"]
+    # if args.use_wandb:
+    #     with open('secret.json') as config_file:
+    #         config = json.load(config_file)
+    #         os.environ["WANDB_API_KEY"] = config["WANDB_API_KEY"]
     return args, path, logger, wandb_config
 
 def create_checkpoint_path(args):

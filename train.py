@@ -29,7 +29,6 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 logger.info("Using device: %s", device) 
 transform = None
 if args.augmentation:
-        print("Using augmentation")
         transform = transforms.Compose(
             [transforms.RandomResizedCrop(size=(48, 48), scale=(0.8, 1.2)),
             transforms.RandomHorizontalFlip(p=0.5),

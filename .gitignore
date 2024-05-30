@@ -132,3 +132,4 @@ Thumbs.db
 secret.json
 
 *.onnx
+Dockerfile
