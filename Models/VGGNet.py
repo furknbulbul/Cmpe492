@@ -45,3 +45,16 @@ class VGGNet(nn.Module):
         x = x.view(-1, 512 * 3 * 3)
         x = self.classifier(x)
         return x
+
+class SiamaseNetVGG(nn.Module):
+    def __init__(self, embedding_net):
+        super(SiamaseNetVGG, self).__init__()
+        self.embedding_net = embedding_net
+    
+    def forward(self, x1, x2):
+        output1 = self.embedding_net(x1)
+        output2 = self.embedding_net(x2)
+        return output1, output2
+
+    
+        

@@ -69,7 +69,7 @@ class MultimodalTrainer(ImageTrainer):
     
         
     def pre_val_model(self, model, data_loader, criterion):
-        correct = 0
+        
         running_loss = 0.0
         model.eval()
         

@@ -103,7 +103,7 @@ dmypy.json
 
 # Data folders you might use in your project
 data/
-models/
+
 datasets/
 logs/
 results/
@@ -133,3 +133,4 @@ secret.json
 
 *.onnx
 Dockerfile
+entrypoint.sh

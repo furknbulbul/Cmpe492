@@ -14,6 +14,8 @@ import torch.nn as nn
 from loss.nt_xent import NTXentLoss
 from sklearn.metrics import confusion_matrix
 import seaborn as sns  
+from loss.contrastive_loss import ContrastiveLoss
+from loss.triplet_loss import TripletLoss
 
 
 # TODO: hyperparameter tuning
@@ -41,6 +43,8 @@ if args.augmentation:
 
 cross_entropy = nn.CrossEntropyLoss()
 nt_xent = NTXentLoss(device, args.batch, args.ntxnet_temp, use_cosine_similarity = True, alpha_weight = args.ntxnet_alpha)
+contrastive_loss = ContrastiveLoss(margin=1.0)
+triplet_loss = TripletLoss(margin=1.0)
 
 if args.model == "vgg":
     dataset_train = dataset(root = args.data_root, phase = 'train', transform = transform)

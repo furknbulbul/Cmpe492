@@ -29,10 +29,20 @@ class ImageTrainer:
 
             running_loss += loss.item()
 
-            if i % 100 == 0:
-                print(f"Batch {i}, Loss: {loss.item()}, Accuracy: {correct / ((i+1) * images.size(0))}")
-
         return correct/len(data_loader.dataset), running_loss/len(data_loader) 
+    
+    def train_contrastive(self, model, data_loader, criterion, optimizer):
+        correct = 0
+        running_loss = 0.0
+        model.train()
+        for (images1, images2, labels) in data_loader:
+            images1, images2, labels = images1.to(self.device), images2.to(self.device), labels.to(self.device)
+            optimizer.zero_grad()
+            outputs1, outputs2 = model(images1, images2)
+            loss = criterion(outputs1, outputs2, labels)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()
 
     def val_model(self, model, data_loader, criterion):
         model.eval()
@@ -69,4 +79,5 @@ class ImageTrainer:
         correct_values = torch.stack(correct_values).to(self.device)
         acc = (predictions == correct_values).sum().item() / len(correct_values)
         return predictions, prediction_probs, correct_values, acc
+    
 
