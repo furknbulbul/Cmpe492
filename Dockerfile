@@ -28,6 +28,8 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 RUN python3 -m pip install --upgrade pip && \
     python3 -m venv /opt/python3/venv/base
 
+WORKDIR /opt/python3/venv/base
+
 COPY . /opt/python3/venv/base/
 
 
@@ -38,7 +40,7 @@ COPY entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh
 
-WORKDIR /opt/python3/venv/base
+
 
 # Set entrypoint to bash
 ENTRYPOINT ["/entrypoint.sh"]

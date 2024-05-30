@@ -16,6 +16,12 @@ from sklearn.metrics import confusion_matrix
 import seaborn as sns  
 
 
+# TODO: hyperparameter tuning
+# more augmentation, maybe noise
+# decrease the dim of the mlp layers
+# increase batch size
+
+
 
 args, path, logger, wandb_config = setup()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -101,7 +107,7 @@ def train_vgg():
 
         if epoch % args.save_freq == 0:
             #torch.save(model.state_dict(), path + f"/vgg_{epoch}.pth")
-            upload_wandb(f"pretrain_{epoch}", model, (example_image), args)
+            upload_wandb(f"vgg_{epoch}", model, (example_image), args)
 
 
     
@@ -109,6 +115,8 @@ def train_vgg():
     pred, probs, corrects, test_acc = trainer.test_model(model, test_loader)
     logger.info("Test Accuracy: %f", test_acc)
     logger.test_log_wandb(test_acc)
+    corrects = torch.tensor(corrects).cpu()
+    pred = torch.tensor(pred).cpu()
     cm = confusion_matrix(corrects, pred)
     save_confusion_matrix(cm, args)
     wandb.finish()
@@ -173,6 +181,8 @@ def train_classifier():
     pred, probs, corrects, test_acc = trainer.test_model(model, test_loader)
     logger.info("Test Accuracy: %f", test_acc)
     logger.test_log_wandb(test_acc)
+    corrects = torch.tensor(corrects).cpu()
+    pred = torch.tensor(pred).cpu()
     cm = confusion_matrix(corrects, pred)
     save_confusion_matrix(cm, args)
     wandb.finish()
@@ -207,6 +217,8 @@ def train_finetune():
     pred, probs, corrects, test_acc = trainer.test_model(model, test_loader)
     logger.info("Test Accuracy: %f", test_acc)
     logger.test_log_wandb(test_acc)
+    corrects = torch.tensor(corrects).cpu()
+    pred = torch.tensor(pred).cpu()
     cm = confusion_matrix(corrects, pred)
     save_confusion_matrix(cm, args)
     wandb.finish()

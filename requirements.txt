@@ -65,3 +65,4 @@ urllib3
 wandb==0.17.0
 Werkzeug 
 yarl 
+seaborn

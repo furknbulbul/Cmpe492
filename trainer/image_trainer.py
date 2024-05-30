@@ -34,7 +34,7 @@ class ImageTrainer:
 
         return correct/len(data_loader.dataset), running_loss/len(data_loader) 
 
-    def val_model(self, model, data_loader, criterion, validation = True):
+    def val_model(self, model, data_loader, criterion):
         model.eval()
         losses = []
         correct = 0
@@ -47,10 +47,7 @@ class ImageTrainer:
                 loss = criterion(outputs, labels)
                 losses.append(loss.item())
 
-            if validation:
-                return correct/self.val_len, np.mean(losses)
-            else:
-                return correct/self.test_len, np.mean(losses)
+        return correct/len(data_loader.dataset), np.mean(losses)
 
     def test_model(self, model, data_loader):
         model.eval()

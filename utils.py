@@ -4,9 +4,6 @@ import wandb
 import os
 
 
-
-
-
 class Logger():
     def __init__(self, logfile='output.log', use_wandb=False):
         self.logfile = logfile
@@ -66,6 +63,7 @@ def save_model(model, save_path):
 
 
 def upload_wandb(name, model, input, args):
+    return
     if args.use_wandb:
         # torch.onnx.export(model, input, name + ".onnx")
         # wandb.save(name + ".onnx")
@@ -79,7 +77,7 @@ def save_confusion_matrix(cm, args):
     import matplotlib.pyplot as plt
     import seaborn as sns
     if args.use_wandb:
-        class_namesf = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
+        class_names = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
 
         fig = plt.figure(figsize=(10, 8))
         sns.heatmap(cm, annot=True, fmt="d", cmap='Blues', xticklabels=class_names, yticklabels=class_names)
