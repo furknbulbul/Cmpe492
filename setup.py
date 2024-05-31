@@ -47,6 +47,7 @@ def get_args():
     parser.add_argument("--mlp_output_dim", default=64, type=int)
     parser.add_argument("--ntxnet_alpha", default=0.75, type=float, help="alpha for ntxnet loss")
     parser.add_argument("--ntxnet_temp", default=0.1, type=float, help="temperature for ntxnet loss")
+    parser.add_argument("--word_embedding_dim", default=100, type=int)  
     parser.add_argument("--contrastive_loss", action="store_true", help="use contrastive loss") # use with vgg for now
     get_pipeline_args(parser)
 
