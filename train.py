@@ -1,7 +1,6 @@
 from setup import *
 from utils import *
 import torchtext; torchtext.disable_torchtext_deprecation_warning()
-from models.multimodal import *
 import torch
 from torchvision.transforms import transforms
 from dataloader.image_dataset import *
@@ -132,8 +131,6 @@ def train_vgg():
 
      
 def train_pretrain():
-    example_image = torch.rand(1, 1, 48, 48).to(device)
-    example_text = torch.randint(0, 100, (1,)).to(device)
     if args.use_wandb:
         wandb.init(project=args.wandb_project, config=wandb_config, name = "pretrain")
         wandb.watch(model)
@@ -154,17 +151,12 @@ def train_pretrain():
     wandb.finish()
                 
 def train_classifier(type = "classifier"):
+   
     model.use_classifier = True
     model.freeze_cnn = True
     model.reset_classifier()
     print("Using classifer of the model:", model.use_classifier)
     print("Freezeing cnn:", model.freeze_cnn)
-    try:
-        train_loader.dataset.use_classifer = True
-        val_loader.dataset.use_classifer = True
-        test_loader.dataset.use_classifer = True
-    except:
-        pass
 
     if args.use_wandb:
         wandb.init(project=args.wandb_project, config=wandb_config, name = type)
@@ -258,8 +250,8 @@ if args.model == "vgg":
 
 if args.model == "multimodal" and args.train_pipeline:
     train_pretrain()
-    train_classifier()
     train_finetune()
+    train_classifier()
 elif args.pretrain:
     train_pretrain()
 
