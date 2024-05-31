@@ -4,7 +4,7 @@ import torchtext; torchtext.disable_torchtext_deprecation_warning()
 from models.multimodal import *
 import torch
 from torchvision.transforms import transforms
-from dataloader.dataset import *
+from dataloader.image_dataset import *
 from dataloader.multimodal_dataset import *
 from trainer.multimodal_trainer import *
 from torch.utils.data import DataLoader, random_split
@@ -16,7 +16,8 @@ from sklearn.metrics import confusion_matrix
 import seaborn as sns  
 from loss.contrastive_loss import ContrastiveLoss
 from loss.triplet_loss import TripletLoss
-
+from dataloader.siamase_dataset import SiamaseDataset
+from models.VGGNet import SiamaseNetVGG
 
 # TODO: hyperparameter tuning
 # more augmentation, maybe noise
@@ -47,10 +48,16 @@ contrastive_loss = ContrastiveLoss(margin=1.0)
 triplet_loss = TripletLoss(margin=1.0)
 
 if args.model == "vgg":
-    dataset_train = dataset(root = args.data_root, phase = 'train', transform = transform)
-    dataset_test = dataset(root = args.data_root, phase = 'test', transform = None)
-    model = VGGNet(config = args.vgg_config, num_classes = 7, dropout = args.dropout)
-    trainer = ImageTrainer()
+    if args.contrastive_loss:
+        dataset_train = SiamaseDataset(root = args.data_root, phase = 'train', transform = transform)
+        dataset_test = ImageDataset(root = args.data_root, phase = 'test', transform = None)
+        model = SiamaseNetVGG(VGGNet(config = args.vgg_config, num_classes = 7, dropout = args.dropout), use_classifier = False, freeze_cnn=True)
+        trainer = ImageTrainer()
+    else:
+        dataset_train = ImageDataset(root = args.data_root, phase = 'train', transform = transform)
+        dataset_test = ImageDataset(root = args.data_root, phase = 'test', transform = None)
+        model = VGGNet(config = args.vgg_config, num_classes = 7, dropout = args.dropout)
+        trainer = ImageTrainer()
 
 if args.model == "multimodal":
     print("Using multimodal model")
@@ -96,7 +103,6 @@ def train_vgg():
     if args.use_wandb:
         wandb.init(project=args.wandb_project, config=wandb_config, name = "vgg")
         wandb.watch(model)
-    example_image = torch.rand(1, 1, 48, 48).to(device)
     
     for epoch in range(1, args.pretrain_epoch+1):
         train_acc, train_loss = trainer.train_model(model, train_loader, cross_entropy, optimizer)
@@ -108,13 +114,12 @@ def train_vgg():
         logger.train_log_wandb(epoch, train_loss, train_acc)
         logger.val_log_wandb(epoch, val_loss, val_acc)
 
-        if epoch % args.save_freq == 0:
-            #torch.save(model.state_dict(), path + f"/vgg_{epoch}.pth")
-            upload_wandb(f"vgg_{epoch}", model, (example_image), args)
+        if epoch % args.save_freq == 0 and epoch != args.pretrain_epoch:
+            upload_wandb(f"vgg_{epoch}", model, args)
 
 
     
-    upload_wandb("vgg-done", model, (example_image), args)
+    upload_wandb("vgg-done", model,  args)
     pred, probs, corrects, test_acc = trainer.test_model(model, test_loader)
     logger.info("Test Accuracy: %f", test_acc)
     logger.test_log_wandb(test_acc)
@@ -141,26 +146,28 @@ def train_pretrain():
         logger.train_log_wandb(epoch, train_loss)
         logger.val_log_wandb(epoch, val_loss)
 
-        if epoch % args.save_freq == 0:
-            #torch.save(model.state_dict(), path + f"/vgg_{epoch}.pth")
-            upload_wandb(f"pretrain_{epoch}", model, (example_image,example_text), args)
+        if epoch % args.save_freq == 0 and epoch != args.pretrain_epoch:
+            upload_wandb(f"pretrain_{epoch}", model,  args)
             
     
-    upload_wandb("pretrain-done", model, (example_image,example_text), args)
-
-    
-   
-
+    upload_wandb("pretrain-done", model,  args)
     wandb.finish()
                 
-def train_classifier():
-    example_image = torch.rand(1, 1, 48, 48).to(device)
-    example_text = torch.randint(0, 100, (1,)).to(device)
+def train_classifier(type = "classifier"):
     model.use_classifier = True
     model.freeze_cnn = True
     model.reset_classifier()
+    print("Using classifer of the model:", model.use_classifier)
+    print("Freezeing cnn:", model.freeze_cnn)
+    try:
+        train_loader.dataset.use_classifer = True
+        val_loader.dataset.use_classifer = True
+        test_loader.dataset.use_classifer = True
+    except:
+        pass
+
     if args.use_wandb:
-        wandb.init(project=args.wandb_project, config=wandb_config, name = "classifier")
+        wandb.init(project=args.wandb_project, config=wandb_config, name = type)
         wandb.watch(model)
 
     for epoch in range(1, args.classifier_epoch+1):
@@ -171,14 +178,11 @@ def train_classifier():
         logger.train_log_wandb(epoch, train_loss, train_acc)
         logger.val_log_wandb(epoch, val_loss, val_acc)
 
-
-
         if epoch % args.save_freq == 0:
-            #torch.save(model.state_dict(), path + f"/vgg_{epoch}.pth")
-            upload_wandb(f"classifier_{epoch}", model, (example_image,example_text), args)
+            upload_wandb(f"{type}_{epoch}", model,  args)
         
 
-    upload_wandb("classifier-done", model, (example_image,example_text), args)
+    upload_wandb(f"{type}-done", model, args)
 
     # test 
     pred, probs, corrects, test_acc = trainer.test_model(model, test_loader)
@@ -193,14 +197,14 @@ def train_classifier():
 
 
 
-def train_finetune():
-    example_image = torch.rand(1, 1, 48, 48).to(device)
-    example_text = torch.randint(0, 100, (1,)).to(device)
+def train_finetune(type = "finetune"):
     model.use_classifier = True
     model.freeze_cnn = False
     model.reset_classifier()
+    print("Using classifer of the model:", model.use_classifier)
+    print("Freezeing cnn:", model.freeze_cnn)
     if args.use_wandb:
-        wandb.init(project=args.wandb_project, config=wandb_config, name = "finetune")
+        wandb.init(project=args.wandb_project, config=wandb_config, name = type)
         wandb.watch(model)
     
     for epoch in range(1, args.finetune_epoch+1):
@@ -211,12 +215,11 @@ def train_finetune():
         logger.train_log_wandb(epoch, train_loss, train_acc)
         logger.val_log_wandb(epoch, val_loss, val_acc)
 
-        if epoch % args.save_freq == 0:
-            #torch.save(model.state_dict(), path + f"/vgg_{epoch}.pth")
-            upload_wandb(f"finetune_{epoch}", model, (example_image,example_text), args)
-                
+        if epoch % args.save_freq == 0 and epoch != args.finetune_epoch:
+            upload_wandb(f"{type}_{epoch}", model,  args)
+        
     
-    upload_wandb("finetune-done", model, (example_image,example_text), args)
+    upload_wandb(f"{type}-done", model,  args)
     pred, probs, corrects, test_acc = trainer.test_model(model, test_loader)
     logger.info("Test Accuracy: %f", test_acc)
     logger.test_log_wandb(test_acc)
@@ -226,10 +229,34 @@ def train_finetune():
     save_confusion_matrix(cm, args)
     wandb.finish()
 
-if args.model == "vgg":
-    train_vgg()
+def train_contrastive():
+    if args.use_wandb:
+        wandb.init(project=args.wandb_project, config=wandb_config, name = "contrastive")
+        wandb.watch(model)
+    for epoch in range(1, args.pretrain_epoch+1):
+        train_loss = trainer.train_contrastive(model, train_loader, contrastive_loss, optimizer)
+        val_loss = trainer.val_contrastive(model, val_loader, contrastive_loss)
+        logger.info("Epoch: %d, Train Loss: %f, Val Loss: %f", epoch, train_loss, val_loss)
+        logger.train_log_wandb(epoch, train_loss)
+        logger.val_log_wandb(epoch, val_loss)
 
-if args.train_pipeline:
+        if epoch % args.save_freq == 0:
+            upload_wandb(f"contrastive_{epoch}", model,  args)
+    
+    upload_wandb("contrastive-img-img-done", model,  args)
+    wandb.finish()
+    train_classifier("contrastive-img-img-classifier")
+    train_finetune("contrastive-img-img-finetune")
+
+        
+
+if args.model == "vgg":
+    if not args.contrastive_loss:
+        train_vgg()
+    else :
+        train_contrastive()
+
+if args.model == "multimodal" and args.train_pipeline:
     train_pretrain()
     train_classifier()
     train_finetune()

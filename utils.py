@@ -62,11 +62,8 @@ def save_model(model, save_path):
 
 
 
-def upload_wandb(name, model, input, args):
-    return
+def upload_wandb(name, model, args):
     if args.use_wandb:
-        # torch.onnx.export(model, input, name + ".onnx")
-        # wandb.save(name + ".onnx")
         torch.save(model.state_dict(), name + ".pth")
         artifact = wandb.Artifact(name, type='model')
         artifact.add_file(name + ".pth")

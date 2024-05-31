@@ -1,5 +1,5 @@
 from torch import nn
-
+import math
 # Khaireddin, Yousif, and Zhuofa Chen.
 # "Facial Emotion Recognition: State of the Art Performance on FER2013." arXiv preprint arXiv:2105.03588 (2021).
 
@@ -46,15 +46,42 @@ class VGGNet(nn.Module):
         x = self.classifier(x)
         return x
 
+
 class SiamaseNetVGG(nn.Module):
-    def __init__(self, embedding_net):
+    def __init__(self, vgg_net, use_classifier=False, freeze_cnn=True):
         super(SiamaseNetVGG, self).__init__()
-        self.embedding_net = embedding_net
+        self.embedding_net = vgg_net.features
+        self.classifier_net = vgg_net.classifier
+        self.use_classifier = use_classifier
+        self.freeze_cnn = freeze_cnn
     
-    def forward(self, x1, x2):
-        output1 = self.embedding_net(x1)
-        output2 = self.embedding_net(x2)
-        return output1, output2
+    def forward(self, x1, x2) :
+        if not self.use_classifier:
+            output1 = self.embedding_net(x1)
+            output2 = self.embedding_net(x2)
+            output1 = output1.view(-1, 512 * 3 * 3)
+            output2 = output2.view(-1, 512 * 3 * 3)
+            return output1, output2
+        else:
+            if self.freeze_cnn:
+                for param in self.embedding_net.parameters():
+                    param.requires_grad = False
+            
+            features = self.embedding_net(x1)
+            features = features.view(-1, 512 * 3 * 3)
+            logits = self.classifier_net(features)
+            return logits
+        
+    
+    def reset_classifier(self):
+        for layer in self.classifier_net:
+            if isinstance(layer, nn.Linear):
+                nn.init.kaiming_uniform_(layer.weight, a=math.sqrt(5))
+                if layer.bias is not None:
+                    fan_in, _ = nn.init._calculate_fan_in_and_fan_out(layer.weight)
+                    bound = 1 / math.sqrt(fan_in)
+                    nn.init.uniform_(layer.bias, -bound, bound)
+
 
     
         

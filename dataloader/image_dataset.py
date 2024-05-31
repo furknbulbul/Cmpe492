@@ -4,7 +4,7 @@ from torchvision.io import read_image, ImageReadMode
 import torch
 
 
-class dataset(Dataset):
+class ImageDataset(Dataset):
     def __init__(self, root, phase="train", transform=None, target_transform=None):
         self.root = root
         self.phase = phase
@@ -34,10 +34,13 @@ class dataset(Dataset):
         img_path = os.path.join(label_path, img_name)
         image = read_image(img_path)
         image = image.to(torch.float32)
+        image /= 255.0
+        
 
         if self.transform:
             image = self.transform(image)
         if self.target_transform:
             label = self.target_transform(label)
+        
 
         return image, self.labels_map[label]
