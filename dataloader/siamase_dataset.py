@@ -1,14 +1,13 @@
 import numpy as np
 from dataloader.image_dataset import ImageDataset
 class SiamaseDataset(ImageDataset):
-    def __init__(self, root, phase="train", transform=None,use_classifer = False , target_transform=None):
+    def __init__(self, root, phase="train", transform=None, target_transform=None):
         super(SiamaseDataset, self).__init__(root, phase, transform, target_transform)
-        self.use_classifer = use_classifer
+        
 
 
     def __getitem__(self, idx):
-        if self.use_classifer:
-            return super(SiamaseDataset, self).__getitem__(idx)
+     
         target = np.random.randint(0, 2)
         img1, label1 = super().__getitem__(idx)
         # target = 1 means the two images are from the same class

@@ -101,6 +101,7 @@ class ImageTrainer:
         running_loss = 0.0
         model.train()
         for (images, labels) in data_loader:
+            print(images)
             images, labels = images.to(self.device), labels.to(self.device)
             optimizer.zero_grad()
             outputs = model(images)
