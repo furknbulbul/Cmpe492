@@ -77,8 +77,8 @@ if args.model == "vit":
 
 if args.model == "multimodal":
     print("Using multimodal model")
-    image_embedding_dim = 512 if args.image_embedding == "vgg11" or args.image_embedding == "vgg16" else 0
-    image_embedding_dim = 2048 if args.image_embedding == "resnet" else 0
+    image_embedding_dim = 512 if args.image_embedding == "vgg11" or args.image_embedding == "vgg16" else 2048
+    
     dataset_train = MultimodalDataset(root = args.data_root, phase = 'train', transform = transform, text_embedding_dim=args.word_embedding_dim)
     dataset_test = MultimodalDataset(root = args.data_root, phase = 'test', transform = None, text_embedding_dim=args.word_embedding_dim)
     model = Multimodal(image_embedding_dim = image_embedding_dim, hidden_dim = args.mlp_hidden_dim, output_dim = args.mlp_output_dim, text_embedding_dim=args.word_embedding_dim, image_embedding= args.image_embedding, num_classes = 7, dropout = args.dropout)
