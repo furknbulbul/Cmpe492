@@ -79,5 +79,6 @@ def create_wandb_config(args):
     config["mlp_hidden_dim"] = args.mlp_hidden_dim
     config["mlp_output_dim"] = args.mlp_output_dim
     config["ntxnet_alpha"] = args.ntxnet_alpha
+    config["image_embedding"] = args.image_embedding
     return config
 
