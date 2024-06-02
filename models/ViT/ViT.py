@@ -1,6 +1,6 @@
 from torch import nn
-from Models.ViT.patch_embedding import PatchEmbedding
-from Models.ViT.TransformerEncoder import TransformerEncoderBlock
+from .TransformerEncoder import TransformerEncoderBlock
+from .patch_embedding import PatchEmbedding
 import torch
 
 

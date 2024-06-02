@@ -42,7 +42,3 @@ class PatchEmbedding(nn.Module):
         return x_flattened.permute(0, 2, 1)  # adjust so the embedding is on the final dimension [batch_size, P^2•C, N] -> [batch_size, N, P^2•C]
 
 
-# patchify = PatchEmbedding()
-# img = torch.randn(1, 1, 48, 48)
-# output = patchify(img) #[batch_size, Number of patches, embedding_dim]
-# print(output.shape)  

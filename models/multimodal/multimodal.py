@@ -14,13 +14,14 @@ class Multimodal(nn.Module):
         assert not (use_classifier and not freeze_cnn), "freeze_cnn can only be True when use_classifier is True"
         self.use_classifier = use_classifier
         self.freeze_cnn = freeze_cnn
+        self.image_embedding_dim = image_embedding_dim
         print("IMAGE EMBEDDING: ", image_embedding)
         if image_embedding == "vgg11":
             self.image_embedding = VGGNet(num_classes=num_classes, config='vgg11', dropout=dropout, is_classifier=False)
         elif image_embedding == "vgg16":
             self.image_embedding = VGGNet(num_classes=num_classes, config='vgg16', dropout=dropout, is_classifier=False)
-        elif image_embedding == "resnet50":
-            self.image_embedding = ResNet50(num_classes=num_classes, pretrained=False, input_size=48, is_classifier=False, dropout=dropout)
+        elif image_embedding == "resnet":
+            self.image_embedding = ResNet50(num_classes=num_classes, pretrained=False, is_classifier=False, dropout=dropout)
 
 
         if freeze_cnn:
@@ -29,12 +30,15 @@ class Multimodal(nn.Module):
         self.text_embedding = WordEmbedding(embedding_dim=text_embedding_dim)
         print("TEXT EMBEDDING: ", self.text_embedding.embedding_dim)
 
+        print("IMAGE EMBEDDING DIM: ", self.image_embedding_dim)
         self.image_projector = ProjectionMLP(image_embedding_dim, hidden_dim, output_dim)
         self.text_projector = ProjectionMLP(text_embedding_dim, hidden_dim, output_dim, is_text=True)
-
-        self.classifier =  nn.Sequential(nn.Linear(512 * 1 * 1, 4096), nn.Dropout(dropout), nn.ReLU(True),
+        
+            
+        self.classifier =  nn.Sequential(nn.Linear(image_embedding_dim, 4096), nn.Dropout(dropout), nn.ReLU(True),
                                 nn.Linear(4096, 4096), nn.Dropout(dropout), nn.ReLU(True),
                                 nn.Linear(4096, num_classes))
+ 
 
     def forward(self, image, texts):
 
@@ -45,7 +49,8 @@ class Multimodal(nn.Module):
 
         
         image_embedding = self.image_embedding(image)
-        flattened_image = image_embedding.view(-1, 512 * 1 * 1)
+        flattened_image = image_embedding.view(-1, self.image_embedding_dim * 1 * 1)
+            
         logits = self.classifier(flattened_image)
         return logits # only return the classification output if use_classifier is True
     

@@ -23,7 +23,7 @@ class ResNet50(nn.Module):
         nn.Dropout(dropout),
         nn.ReLU(True),
         nn.Linear(4096, num_classes)
-         )
+        )
 
 
 
@@ -40,12 +40,12 @@ class ResNet50(nn.Module):
 
         x = self.resnet50.layer4(x)
     
+        x = self.resnet50.avgpool(x)
         if not self.is_classifier:
-            
             return x
 
-        x = self.resnet50.avgpool(x)
-        x = torch.flatten(x, 1) 
+        
+        x = x.view(x.size(0), -1)
 
         x = self.classifier(x)
         return x

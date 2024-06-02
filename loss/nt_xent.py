@@ -85,5 +85,6 @@ class NTXentLoss(torch.nn.Module):
 
         loss_a = self.softXEnt(labels, logits_ab)
         loss_b = self.softXEnt(labels, logits_ba)
+    
 
         return alpha*loss_a + (1-alpha)*loss_b

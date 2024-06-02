@@ -19,6 +19,7 @@ from dataloader.siamase_dataset import SiamaseDataset
 from models.VGGNet import SiamaseNetVGG
 import torchvision.models as models
 from models.resnet import ResNet50 
+from models.ViT.ViT import ViT
 
 # TODO: hyperparameter tuning
 # more augmentation, maybe noise
@@ -66,13 +67,21 @@ if args.model == "resnet":
     dataset_test = ImageDataset(root = args.data_root, phase = 'test', transform = None)
     model = ResNet50(num_classes = 7, is_classifier = True, dropout = args.dropout)
     trainer = ImageTrainer()
+
+if args.model == "vit":
+    dataset_train = ImageDataset(root = args.data_root, phase = 'train', transform = transform)
+    dataset_test = ImageDataset(root = args.data_root, phase = 'test', transform = None)
+    model = ViT()
+    trainer = ImageTrainer()
    
 
 if args.model == "multimodal":
     print("Using multimodal model")
+    image_embedding_dim = 512 if args.image_embedding == "vgg11" or args.image_embedding == "vgg16" else 0
+    image_embedding_dim = 2048 if args.image_embedding == "resnet" else 0
     dataset_train = MultimodalDataset(root = args.data_root, phase = 'train', transform = transform, text_embedding_dim=args.word_embedding_dim)
     dataset_test = MultimodalDataset(root = args.data_root, phase = 'test', transform = None, text_embedding_dim=args.word_embedding_dim)
-    model = Multimodal(hidden_dim = args.mlp_hidden_dim, output_dim = args.mlp_output_dim, text_embedding_dim=args.word_embedding_dim, image_embedding= args.image_embedding, num_classes = 7, dropout = args.dropout)
+    model = Multimodal(image_embedding_dim = image_embedding_dim, hidden_dim = args.mlp_hidden_dim, output_dim = args.mlp_output_dim, text_embedding_dim=args.word_embedding_dim, image_embedding= args.image_embedding, num_classes = 7, dropout = args.dropout)
     trainer = MultimodalTrainer()
 
 
@@ -107,7 +116,7 @@ logger.info("Test set length: %d", len(dataset_test))
 
 
 
-def train_vgg_resnet(name = "vgg"):
+def train_vgg_resnet_vit(name = "vgg"):
     if args.use_wandb:
         wandb.init(project=args.wandb_project, config=wandb_config, name = name)
         wandb.watch(model)
@@ -255,12 +264,14 @@ def train_contrastive():
 
 if args.model == "vgg":
     if not args.contrastive_loss:
-        train_vgg_resnet(name = "vgg")
+        train_vgg_resnet_vit(name = "vgg")
     else :
         train_contrastive()
 
 if args.model == "resnet":
-    train_vgg_resnet(name = "resnet")
+    train_vgg_resnet_vit(name = "resnet")
+if args.model == "vit":
+    train_vgg_resnet_vit(name = "vit")
 
 if args.model == "multimodal" and args.train_pipeline:
     train_pretrain()

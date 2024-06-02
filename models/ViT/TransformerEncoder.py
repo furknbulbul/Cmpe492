@@ -1,6 +1,6 @@
 from torch import nn
-from multi_head_attention import MultiheadSelfAttentionBlock
-from MLP import MLPBlock
+from .multi_head_attention import MultiheadSelfAttentionBlock
+from .MLP import MLPBlock
 
 
 # 1. Create a class that inherits from nn.Module
