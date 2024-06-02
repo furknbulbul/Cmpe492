@@ -17,6 +17,8 @@ from loss.contrastive_loss import ContrastiveLoss
 from loss.triplet_loss import TripletLoss
 from dataloader.siamase_dataset import SiamaseDataset
 from models.VGGNet import SiamaseNetVGG
+import torchvision.models as models
+from models.resnet import ResNet50 
 
 # TODO: hyperparameter tuning
 # more augmentation, maybe noise
@@ -45,6 +47,7 @@ cross_entropy = nn.CrossEntropyLoss()
 nt_xent = NTXentLoss(device, args.batch, args.ntxnet_temp, use_cosine_similarity = True, alpha_weight = args.ntxnet_alpha)
 contrastive_loss = ContrastiveLoss(margin=1.0)
 triplet_loss = TripletLoss(margin=1.0)
+print(args.model)
 
 if args.model == "vgg":
     if args.contrastive_loss:
@@ -58,14 +61,20 @@ if args.model == "vgg":
         model = VGGNet(config = args.vgg_config, num_classes = 7, dropout = args.dropout)
         trainer = ImageTrainer()
 
+if args.model == "resnet":
+    dataset_train = ImageDataset(root = args.data_root, phase = 'train', transform = transform)
+    dataset_test = ImageDataset(root = args.data_root, phase = 'test', transform = None)
+    model = ResNet50(num_classes = 7, is_classifier = True, dropout = args.dropout)
+    trainer = ImageTrainer()
+   
+
 if args.model == "multimodal":
     print("Using multimodal model")
     dataset_train = MultimodalDataset(root = args.data_root, phase = 'train', transform = transform, text_embedding_dim=args.word_embedding_dim)
     dataset_test = MultimodalDataset(root = args.data_root, phase = 'test', transform = None, text_embedding_dim=args.word_embedding_dim)
-    model = Multimodal(hidden_dim = args.mlp_hidden_dim, output_dim = args.mlp_output_dim, text_embedding_dim=args.word_embedding_dim, num_classes = 7, dropout = args.dropout)
-    print(f"Training dataset size: {len(dataset_train)}")
-    print(f"Testing dataset size: {len(dataset_test)}")
+    model = Multimodal(hidden_dim = args.mlp_hidden_dim, output_dim = args.mlp_output_dim, text_embedding_dim=args.word_embedding_dim, image_embedding= args.image_embedding, num_classes = 7, dropout = args.dropout)
     trainer = MultimodalTrainer()
+
 
 
 optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay = args.l2regularization) if args.optimizer == "adam" else torch.optim.SGD(model.parameters(), lr=args.learning_rate, momentum=0.9)
@@ -98,9 +107,9 @@ logger.info("Test set length: %d", len(dataset_test))
 
 
 
-def train_vgg():
+def train_vgg_resnet(name = "vgg"):
     if args.use_wandb:
-        wandb.init(project=args.wandb_project, config=wandb_config, name = "vgg")
+        wandb.init(project=args.wandb_project, config=wandb_config, name = name)
         wandb.watch(model)
     
     for epoch in range(1, args.pretrain_epoch+1):
@@ -114,11 +123,11 @@ def train_vgg():
         logger.val_log_wandb(epoch, val_loss, val_acc)
 
         if epoch % args.save_freq == 0 and epoch != args.pretrain_epoch:
-            upload_wandb(f"vgg_{epoch}", model, args)
+            upload_wandb(f"{name}_{epoch}", model, args)
 
 
     
-    upload_wandb("vgg-done", model,  args)
+    upload_wandb(f"{name}-done", model,  args)
     pred, probs, corrects, test_acc = trainer.test_model(model, test_loader)
     logger.info("Test Accuracy: %f", test_acc)
     logger.test_log_wandb(test_acc)
@@ -240,18 +249,23 @@ def train_contrastive():
     train_classifier("contrastive-img-img-classifier")
     train_finetune("contrastive-img-img-finetune")
 
+
+
         
 
 if args.model == "vgg":
     if not args.contrastive_loss:
-        train_vgg()
+        train_vgg_resnet(name = "vgg")
     else :
         train_contrastive()
 
+if args.model == "resnet":
+    train_vgg_resnet(name = "resnet")
+
 if args.model == "multimodal" and args.train_pipeline:
     train_pretrain()
-    train_finetune()
     train_classifier()
+    train_finetune()
 elif args.pretrain:
     train_pretrain()
 

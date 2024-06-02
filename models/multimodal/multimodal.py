@@ -4,6 +4,7 @@ import torch
 from .word_embedding import WordEmbedding
 from .projection_mlp import ProjectionMLP
 from ..VGGNet import VGGNet
+from ..resnet import ResNet50
 import math
 
 class Multimodal(nn.Module):
@@ -13,15 +14,20 @@ class Multimodal(nn.Module):
         assert not (use_classifier and not freeze_cnn), "freeze_cnn can only be True when use_classifier is True"
         self.use_classifier = use_classifier
         self.freeze_cnn = freeze_cnn
+        print("IMAGE EMBEDDING: ", image_embedding)
         if image_embedding == "vgg11":
             self.image_embedding = VGGNet(num_classes=num_classes, config='vgg11', dropout=dropout, is_classifier=False)
         elif image_embedding == "vgg16":
             self.image_embedding = VGGNet(num_classes=num_classes, config='vgg16', dropout=dropout, is_classifier=False)
+        elif image_embedding == "resnet50":
+            self.image_embedding = ResNet50(num_classes=num_classes, pretrained=False, input_size=48, is_classifier=False, dropout=dropout)
+
 
         if freeze_cnn:
             for param in self.image_embedding.parameters():
                 param.requires_grad = False
-        self.text_embedding = WordEmbedding()
+        self.text_embedding = WordEmbedding(embedding_dim=text_embedding_dim)
+        print("TEXT EMBEDDING: ", self.text_embedding.embedding_dim)
 
         self.image_projector = ProjectionMLP(image_embedding_dim, hidden_dim, output_dim)
         self.text_projector = ProjectionMLP(text_embedding_dim, hidden_dim, output_dim, is_text=True)
