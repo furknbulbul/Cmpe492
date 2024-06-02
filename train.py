@@ -60,8 +60,8 @@ if args.model == "vgg":
 
 if args.model == "multimodal":
     print("Using multimodal model")
-    dataset_train = MultimodalDataset(root = args.data_root, phase = 'train', transform = transform)
-    dataset_test = MultimodalDataset(root = args.data_root, phase = 'test', transform = None)
+    dataset_train = MultimodalDataset(root = args.data_root, phase = 'train', transform = transform, text_embedding_dim=args.word_embedding_dim)
+    dataset_test = MultimodalDataset(root = args.data_root, phase = 'test', transform = None, text_embedding_dim=args.word_embedding_dim)
     model = Multimodal(hidden_dim = args.mlp_hidden_dim, output_dim = args.mlp_output_dim, text_embedding_dim=args.word_embedding_dim, num_classes = 7, dropout = args.dropout)
     print(f"Training dataset size: {len(dataset_train)}")
     print(f"Testing dataset size: {len(dataset_test)}")

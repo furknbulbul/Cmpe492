@@ -7,13 +7,13 @@ import torch
 
 
 class MultimodalDataset(Dataset):
-    def __init__(self, root, phase="train", transform=None, target_transform=None):
+    def __init__(self, root, phase="train", transform=None, target_transform=None, text_embedding_dim=100):
         self.root = root
         self.phase = phase
         self.transform = transform
         self.target_transform = target_transform
         self.tokenizer = get_tokenizer("basic_english")
-        self.glove = GloVe(name='6B', dim=100)
+        self.glove = GloVe(name='6B', dim=text_embedding_dim)
         self.labels_map = {'angry': 0, 'disgust': 1, 'fear': 2, 'happy': 3, 'sad': 4, 'surprise': 5, 'neutral': 6}
         self.texts = "angry disgust fear happy sad surprise neutral"
         if self.phase == "train":
