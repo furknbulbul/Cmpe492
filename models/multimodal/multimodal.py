@@ -7,13 +7,17 @@ from ..VGGNet import VGGNet
 import math
 
 class Multimodal(nn.Module):
-    def __init__(self, hidden_dim, output_dim, image_embedding_dim = 512 * 1 * 1, text_embedding_dim =  100, num_classes = 7, use_classifier = False, freeze_cnn = False, dropout = 0.2):
+    def __init__(self, hidden_dim, output_dim, image_embedding = "vgg11", image_embedding_dim = 512 * 1 * 1, text_embedding_dim =  100, num_classes = 7, use_classifier = False, freeze_cnn = False, dropout = 0.2):
         super(Multimodal, self).__init__()
         
         assert not (use_classifier and not freeze_cnn), "freeze_cnn can only be True when use_classifier is True"
         self.use_classifier = use_classifier
         self.freeze_cnn = freeze_cnn
-        self.image_embedding = VGGNet(is_classifier=False)
+        if image_embedding == "vgg11":
+            self.image_embedding = VGGNet(num_classes=num_classes, config='vgg11', dropout=dropout, is_classifier=False)
+        elif image_embedding == "vgg16":
+            self.image_embedding = VGGNet(num_classes=num_classes, config='vgg16', dropout=dropout, is_classifier=False)
+
         if freeze_cnn:
             for param in self.image_embedding.parameters():
                 param.requires_grad = False
