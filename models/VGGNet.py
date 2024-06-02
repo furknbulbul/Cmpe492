@@ -5,22 +5,30 @@ import math
 
 configs = {
     'vgg16': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'],
-    'vgg11': [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M']
+    'vgg11': [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 'M']
 
 }
 
 
 class VGGNet(nn.Module):
-    def __init__(self, num_classes=7, config='vgg11', dropout=0.2, is_classifier=True):
+    def __init__(self, num_classes=7, config='vgg11', dropout=0.2, is_classifier=True, input_size=48):
         super(VGGNet, self).__init__()
         self.config = configs[config]
         self.features = self.make_layers()
         self.is_classifier = is_classifier
-        self.classifier =  nn.Sequential(nn.Linear(512 * 3 * 3, 4096), nn.Dropout(dropout), nn.ReLU(True),
-                                    nn.Linear(4096, 4096), nn.Dropout(dropout), nn.ReLU(True),
-                                    nn.Linear(4096, num_classes))
+
         
-        
+        final_size = self.calculate_final_size(input_size)
+
+        self.classifier = nn.Sequential(
+            nn.Linear(512 * final_size * final_size, 4096),
+            nn.Dropout(dropout),
+            nn.ReLU(True),
+            nn.Linear(4096, 4096),
+            nn.Dropout(dropout),
+            nn.ReLU(True),
+            nn.Linear(4096, num_classes)
+        )
 
     def make_layers(self):
         layers = []
@@ -33,16 +41,23 @@ class VGGNet(nn.Module):
                            nn.BatchNorm2d(x),
                            nn.ReLU(inplace=True)]
                 in_channel = x
-        # layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
-
         return nn.Sequential(*layers)
+
+    def calculate_final_size(self, size):
+        for x in self.config:
+            if x == 'M':
+                size = size // 2
+            else:
+                # Convolution layers do not change the spatial dimension with padding=1 and kernel_size=3
+                pass
+        return size
 
     def forward(self, x):
         x = self.features(x)
         if not self.is_classifier:
             return x
 
-        x = x.view(-1, 512 * 3 * 3)
+        x = x.view(x.size(0), -1)  # Flatten the tensor
         x = self.classifier(x)
         return x
 
@@ -59,8 +74,8 @@ class SiamaseNetVGG(nn.Module):
         if not self.use_classifier:
             output1 = self.embedding_net(x1)
             output2 = self.embedding_net(x2)
-            output1 = output1.view(-1, 512 * 3 * 3)
-            output2 = output2.view(-1, 512 * 3 * 3)
+            output1 = output1.view(-1, 512 * 1 * 1)
+            output2 = output2.view(-1, 512 * 1 * 1)
             return output1, output2
         else:
             if self.freeze_cnn:
@@ -68,7 +83,7 @@ class SiamaseNetVGG(nn.Module):
                     param.requires_grad = False
             
             features = self.embedding_net(x1)
-            features = features.view(-1, 512 * 3 * 3)
+            features = features.view(-1, 512 * 1 * 1)
             logits = self.classifier_net(features)
             return logits
         

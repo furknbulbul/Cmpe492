@@ -7,7 +7,7 @@ from ..VGGNet import VGGNet
 import math
 
 class Multimodal(nn.Module):
-    def __init__(self, hidden_dim, output_dim, image_embedding_dim = 512 * 3 * 3, text_embedding_dim =  100, num_classes = 7, use_classifier = False, freeze_cnn = False, dropout = 0.2):
+    def __init__(self, hidden_dim, output_dim, image_embedding_dim = 512 * 1 * 1, text_embedding_dim =  100, num_classes = 7, use_classifier = False, freeze_cnn = False, dropout = 0.2):
         super(Multimodal, self).__init__()
         
         assert not (use_classifier and not freeze_cnn), "freeze_cnn can only be True when use_classifier is True"
@@ -22,7 +22,7 @@ class Multimodal(nn.Module):
         self.image_projector = ProjectionMLP(image_embedding_dim, hidden_dim, output_dim)
         self.text_projector = ProjectionMLP(text_embedding_dim, hidden_dim, output_dim, is_text=True)
 
-        self.classifier =  nn.Sequential(nn.Linear(512 * 3 * 3, 4096), nn.Dropout(dropout), nn.ReLU(True),
+        self.classifier =  nn.Sequential(nn.Linear(512 * 1 * 1, 4096), nn.Dropout(dropout), nn.ReLU(True),
                                 nn.Linear(4096, 4096), nn.Dropout(dropout), nn.ReLU(True),
                                 nn.Linear(4096, num_classes))
 
@@ -35,7 +35,7 @@ class Multimodal(nn.Module):
 
         
         image_embedding = self.image_embedding(image)
-        flattened_image = image_embedding.view(-1, 512 * 3 * 3)
+        flattened_image = image_embedding.view(-1, 512 * 1 * 1)
         logits = self.classifier(flattened_image)
         return logits # only return the classification output if use_classifier is True
     
