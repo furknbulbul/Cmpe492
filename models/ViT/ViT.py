@@ -20,7 +20,7 @@ class ViT(nn.Module):
                  img_size=48, # Training resolution from Table 3 in ViT paper
                  in_channels:int=1, # Number of channels in input image
                  patch_size:int=6, # Patch size, default is 16 for ViT-Base
-                 num_transformer_layers=12, # Layers from Table 1 for ViT-Base, 12 in default
+                 num_transformer_layers=6, # Layers from Table 1 for ViT-Base, 12 in default
                  embedding_dim:int= 36, # Hidden size D from Table 1 for ViT-Base
                  mlp_size=144, # MLP size from Table 1 for ViT-Base, 36 * 4 = 144 in my case
                  num_heads=3, # Heads from Table 1 for ViT-Base,  default 12
