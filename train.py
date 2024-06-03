@@ -79,7 +79,7 @@ if args.model == "vit":
     dataset_train = ImageDataset(root = args.data_root, phase = 'train', transform = transform)
     dataset_test = ImageDataset(root = args.data_root, phase = 'test', transform = None)
     model = models.vit_b_16(weights=None)
-    model.heads = nn.Linear(model.head.in_features, 7) # change the head to output 7 classes
+    model.heads = nn.Linear(model.heads.in_features, 7) # change the head to output 7 classes
     trainer = ImageTrainer()
     
    
