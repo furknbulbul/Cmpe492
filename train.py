@@ -69,10 +69,19 @@ if args.model == "resnet":
     trainer = ImageTrainer()
 
 if args.model == "vit":
+    transform = transforms.Compose(
+            [transforms.Resize((224, 224)),
+            transforms.RandomResizedCrop(size=(48, 48), scale=(0.8, 1.2)),
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomApply([transforms.RandomRotation(degrees=10)], p = 0.5),
+            transforms.RandomApply([transforms.RandomAffine(degrees=0, translate=(0.1, 0.1))], p = 0.5)])
+    
     dataset_train = ImageDataset(root = args.data_root, phase = 'train', transform = transform)
     dataset_test = ImageDataset(root = args.data_root, phase = 'test', transform = None)
-    model = ViT()
+    model = models.vit_b_16(weights=None)
+    model.head = nn.Linear(model.head.in_features, 7) # change the head to output 7 classes
     trainer = ImageTrainer()
+    
    
 
 if args.model == "multimodal":
