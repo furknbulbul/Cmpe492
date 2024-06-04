@@ -4,45 +4,47 @@ import torch.nn.functional as F
 from torchvision import models
 
 
-class ResNet50(nn.Module):
-    def __init__(self, num_classes=7, pretrained=False, input_size=48, is_classifier=True,dropout=0.2):
-        super(ResNet50, self).__init__()
-
-        self.resnet50 = models.resnet50(pretrained=pretrained)
-        
-        self.resnet50.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-
+class ResNet(nn.Module):
+    def __init__(self, num_classes=7, pretrained=False, input_size=48, is_classifier=True, model_name='resnet50'):
+        super(ResNet, self).__init__()
+        self.model_name = model_name
         final_size = self.calculate_final_size(input_size)
 
-        self.is_classifier = is_classifier
-        self.classifier = nn.Sequential(
-        nn.Linear(2048 * final_size * final_size, num_classes),
-        )
+        if model_name == 'resnet50':
+            self.resnet = models.resnet50(pretrained=pretrained)
+            self.classifier = nn.Sequential(nn.Linear(2048 * final_size * final_size, num_classes))
+        else:
+            self.resnet = models.resnet18(pretrained=pretrained)
+            self.classifier = nn.Sequential(nn.Linear(512 * final_size * final_size, num_classes))
+        
+        self.resnet.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+        self.is_classifier = is_classifier  
+        
 
 
 
     def forward(self, x):
-        x = self.resnet50.conv1(x)
-        x = self.resnet50.bn1(x)
-        x = self.resnet50.relu(x)
-        x = self.resnet50.maxpool(x)
+       
+        x = self.resnet.conv1(x)
+        x = self.resnet.bn1(x)
+        x = self.resnet.relu(x)
+        x = self.resnet.maxpool(x)
 
-        x = self.resnet50.layer1(x)
-        x = self.resnet50.layer2(x)
-        x = self.resnet50.layer3(x)
-        
-
-        x = self.resnet50.layer4(x)
+        x = self.resnet.layer1(x)
+        x = self.resnet.layer2(x)
+        x = self.resnet.layer3(x)
+        x = self.resnet.layer4(x)
     
-        x = self.resnet50.avgpool(x)
+        x = self.resnet.avgpool(x)
         if not self.is_classifier:
             return x
 
-        
         x = x.view(x.size(0), -1)
+        print("X SHAPE: ", x.shape)
 
         x = self.classifier(x)
         return x
+        
         
 
     def calculate_final_size(self, size):

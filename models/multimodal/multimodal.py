@@ -4,7 +4,7 @@ import torch
 from .word_embedding import WordEmbedding
 from .projection_mlp import ProjectionMLP
 from ..VGGNet import VGGNet
-from ..resnet import ResNet50
+from ..resnet import ResNet
 import math
 
 class Multimodal(nn.Module):
@@ -21,11 +21,13 @@ class Multimodal(nn.Module):
 
         elif image_embedding == "vgg16":
             self.image_embedding = VGGNet(num_classes=num_classes, config='vgg16', dropout=dropout, is_classifier=False)
-
-        elif image_embedding == "resnet":
-            self.image_embedding = ResNet50(num_classes=num_classes, pretrained=False, is_classifier=False, dropout=dropout)
-
         
+        elif image_embedding == "resnet50":
+            self.image_embedding = ResNet(num_classes=num_classes, pretrained=False, is_classifier=False, model_name = 'resnet50')
+        elif image_embedding == "resnet18":
+            self.image_embedding = ResNet(num_classes=num_classes, pretrained=False, is_classifier=False, model_name = 'resnet18')
+
+
 
         if freeze_cnn:
             for param in self.image_embedding.parameters():

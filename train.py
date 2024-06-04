@@ -18,7 +18,7 @@ from loss.triplet_loss import TripletLoss
 from dataloader.siamase_dataset import SiamaseDataset
 from models.VGGNet import SiamaseNetVGG
 import torchvision.models as models
-from models.resnet import ResNet50 
+from models.resnet import ResNet 
 from models.ViT.ViT import ViT
 from models.modified_vit import ModifiedVit
 
@@ -48,8 +48,11 @@ if args.augmentation:
         transforms.RandomApply([transforms.RandomRotation(degrees=10)], p = 0.5),
         transforms.RandomApply([transforms.RandomAffine(degrees=0, translate=(0.1, 0.1))], p = 0.5),
         transforms.ToTensor()])
-
 tensor_transform = transforms.Compose([transforms.ToTensor()])
+if not args.augmentation:
+    transform = tensor_transform
+
+
 
 cross_entropy = nn.CrossEntropyLoss()
 nt_xent = NTXentLoss(device, args.batch, args.ntxnet_temp, use_cosine_similarity = True, alpha_weight = args.ntxnet_alpha)
@@ -72,7 +75,7 @@ if args.model == "vgg":
 if args.model == "resnet":
     dataset_train = ImageDataset(root = args.data_root, phase = 'train', transform = transform)
     dataset_test = ImageDataset(root = args.data_root, phase = 'test', transform = tensor_transform)
-    model = ResNet50(num_classes = 7, is_classifier = True, dropout = args.dropout)
+    model = ResNet(num_classes = 7, is_classifier = True,  model_name = args.resnet_config)
     trainer = ImageTrainer()
 
 if args.model == "vit":
@@ -86,7 +89,11 @@ if args.model == "vit":
 
 if args.model == "multimodal":
     print("Using multimodal model")
-    image_embedding_dim = 512 if args.image_embedding == "vgg11" or args.image_embedding == "vgg16" else 2048
+    if args.image_embedding == "vgg11" or args.image_embedding == "vgg16" or args.image_embedding == "resnet18":
+        image_embedding_dim = 512 * 1 * 1
+    elif args.image_embedding == "resnet50" :
+        image_embedding_dim = 2048 * 1 * 1
+    
     
     dataset_train = MultimodalDataset(root = args.data_root, phase = 'train', transform = transform, text_embedding_dim=args.word_embedding_dim)
     dataset_test = MultimodalDataset(root = args.data_root, phase = 'test', transform = tensor_transform, text_embedding_dim=args.word_embedding_dim)
