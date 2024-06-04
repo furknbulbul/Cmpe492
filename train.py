@@ -20,6 +20,7 @@ from models.VGGNet import SiamaseNetVGG
 import torchvision.models as models
 from models.resnet import ResNet50 
 from models.ViT.ViT import ViT
+from models.modified_vit import ModifiedVit
 
 # TODO: hyperparameter tuning
 # more augmentation, maybe noise
@@ -34,13 +35,19 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 logger.info("Using device: %s", device) 
 transform = None
 if args.augmentation:
-        transform = transforms.Compose(
-            [transforms.RandomResizedCrop(size=(48, 48), scale=(0.8, 1.2)),
-            transforms.RandomHorizontalFlip(p=0.5),
-            transforms.RandomApply([transforms.RandomRotation(degrees=10)], p = 0.5),
-            transforms.RandomApply([transforms.RandomAffine(degrees=0, translate=(0.1, 0.1))], p = 0.5),
-            ]
-        )
+    transform = transforms.Compose([
+        transforms.RandomResizedCrop(size=(48, 48), scale=(0.8, 1.2)),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomApply([transforms.RandomRotation(degrees=10)], p = 0.5),
+        transforms.RandomApply([transforms.RandomAffine(degrees=0, translate=(0.1, 0.1))], p = 0.5),
+        transforms.ToTensor()])
+    vit_transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.RandomResizedCrop(size=(224, 224), scale=(0.8, 1.2)),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomApply([transforms.RandomRotation(degrees=10)], p = 0.5),
+        transforms.RandomApply([transforms.RandomAffine(degrees=0, translate=(0.1, 0.1))], p = 0.5),
+        transforms.ToTensor()])
 
 
 
@@ -69,17 +76,10 @@ if args.model == "resnet":
     trainer = ImageTrainer()
 
 if args.model == "vit":
-    transform = transforms.Compose(
-            [transforms.Resize((224, 224)),
-            transforms.RandomResizedCrop(size=(48, 48), scale=(0.8, 1.2)),
-            transforms.RandomHorizontalFlip(p=0.5),
-            transforms.RandomApply([transforms.RandomRotation(degrees=10)], p = 0.5),
-            transforms.RandomApply([transforms.RandomAffine(degrees=0, translate=(0.1, 0.1))], p = 0.5)])
     
-    dataset_train = ImageDataset(root = args.data_root, phase = 'train', transform = transform)
+    dataset_train = ImageDataset(root = args.data_root, phase = 'train', transform = vit_transform)
     dataset_test = ImageDataset(root = args.data_root, phase = 'test', transform = None)
-    model = models.vit_b_16(weights=None)
-    model.heads = nn.Linear(model.heads.in_features, 7) # change the head to output 7 classes
+    model = ModifiedVit()
     trainer = ImageTrainer()
     
    
@@ -112,7 +112,10 @@ test_length = len(dataset_test)
 
 dataset_train, dataset_val = random_split(dataset_train, [train_length, val_length],
                                               generator=torch.Generator().manual_seed(42))
-dataset_val.transform = None
+if args.model =="vit":
+    dataset_val.transform = transforms.Compose([transforms.ToPILImage(), transforms.Resize((224, 224)), transforms.ToTensor()])
+else:
+    dataset_val.transform = None
 train_loader = DataLoader(dataset_train, batch_size=args.batch, shuffle=True, pin_memory=True)
 val_loader = DataLoader(dataset_val, batch_size=args.batch, shuffle=True,  pin_memory=True)
 test_loader = DataLoader(dataset_test, batch_size=args.batch, shuffle=True, pin_memory=True)

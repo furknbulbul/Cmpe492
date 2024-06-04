@@ -48,7 +48,7 @@ class VGGNet(nn.Module):
             if x == 'M':
                 size = size // 2
             else:
-                # Convolution layers do not change the spatial dimension with padding=1 and kernel_size=3
+            
                 pass
         return size
 

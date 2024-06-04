@@ -4,6 +4,7 @@ from torchvision.io import read_image
 from torchtext.vocab import GloVe
 from torchtext.data.utils import get_tokenizer
 import torch
+import PIL
 
 
 class MultimodalDataset(Dataset):
@@ -40,8 +41,8 @@ class MultimodalDataset(Dataset):
 
         #indices[0], indices[label] = indices[label], indices[0] # swap the first word with the label word
         indices = torch.tensor([self.glove.stoi[text]])
-        image = read_image(img_path).to(torch.float32)
-        
+        #image = read_image(img_path).to(torch.float32)
+        image = PIL.Image.open(img_path)
         if self.transform:
             image = self.transform(image)
         if self.target_transform:

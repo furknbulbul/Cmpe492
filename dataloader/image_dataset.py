@@ -2,6 +2,7 @@ import os
 from torch.utils.data import Dataset
 from torchvision.io import read_image, ImageReadMode
 import torch
+import PIL
 
 
 class ImageDataset(Dataset):
@@ -32,9 +33,10 @@ class ImageDataset(Dataset):
             idx -= self.lengths[i]
         img_name = os.listdir(label_path)[idx]
         img_path = os.path.join(label_path, img_name)
-        image = read_image(img_path)
-        image = image.to(torch.float32)
-        image /= 255.0
+        image = PIL.Image.open(img_path)
+        # image = read_image(img_path)
+        # image = image.to(torch.float32)
+        # image /= 255.0
         
 
         if self.transform:
