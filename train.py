@@ -49,7 +49,7 @@ if args.augmentation:
         transforms.RandomApply([transforms.RandomAffine(degrees=0, translate=(0.1, 0.1))], p = 0.5),
         transforms.ToTensor()])
 
-
+tensor_transform = transforms.Compose([transforms.ToTensor()])
 
 cross_entropy = nn.CrossEntropyLoss()
 nt_xent = NTXentLoss(device, args.batch, args.ntxnet_temp, use_cosine_similarity = True, alpha_weight = args.ntxnet_alpha)
@@ -60,25 +60,25 @@ print(args.model)
 if args.model == "vgg":
     if args.contrastive_loss:
         dataset_train = SiamaseDataset(root = args.data_root, phase = 'train', transform = transform)
-        dataset_test = ImageDataset(root = args.data_root, phase = 'test', transform = None)
+        dataset_test = ImageDataset(root = args.data_root, phase = 'test', transform = tensor_transform)
         model = SiamaseNetVGG(VGGNet(config = args.vgg_config, num_classes = 7, dropout = args.dropout), use_classifier = False, freeze_cnn=True)
         trainer = ImageTrainer()
     else:
         dataset_train = ImageDataset(root = args.data_root, phase = 'train', transform = transform)
-        dataset_test = ImageDataset(root = args.data_root, phase = 'test', transform = None)
+        dataset_test = ImageDataset(root = args.data_root, phase = 'test', transform = tensor_transform)
         model = VGGNet(config = args.vgg_config, num_classes = 7, dropout = args.dropout)
         trainer = ImageTrainer()
 
 if args.model == "resnet":
     dataset_train = ImageDataset(root = args.data_root, phase = 'train', transform = transform)
-    dataset_test = ImageDataset(root = args.data_root, phase = 'test', transform = None)
+    dataset_test = ImageDataset(root = args.data_root, phase = 'test', transform = tensor_transform)
     model = ResNet50(num_classes = 7, is_classifier = True, dropout = args.dropout)
     trainer = ImageTrainer()
 
 if args.model == "vit":
     
     dataset_train = ImageDataset(root = args.data_root, phase = 'train', transform = vit_transform)
-    dataset_test = ImageDataset(root = args.data_root, phase = 'test', transform = None)
+    dataset_test = ImageDataset(root = args.data_root, phase = 'test', transform = tensor_transform)
     model = ModifiedVit()
     trainer = ImageTrainer()
     
@@ -89,7 +89,7 @@ if args.model == "multimodal":
     image_embedding_dim = 512 if args.image_embedding == "vgg11" or args.image_embedding == "vgg16" else 2048
     
     dataset_train = MultimodalDataset(root = args.data_root, phase = 'train', transform = transform, text_embedding_dim=args.word_embedding_dim)
-    dataset_test = MultimodalDataset(root = args.data_root, phase = 'test', transform = None, text_embedding_dim=args.word_embedding_dim)
+    dataset_test = MultimodalDataset(root = args.data_root, phase = 'test', transform = tensor_transform, text_embedding_dim=args.word_embedding_dim)
     model = Multimodal(image_embedding_dim = image_embedding_dim, hidden_dim = args.mlp_hidden_dim, output_dim = args.mlp_output_dim, text_embedding_dim=args.word_embedding_dim, image_embedding= args.image_embedding, num_classes = 7, dropout = args.dropout)
     trainer = MultimodalTrainer()
 
