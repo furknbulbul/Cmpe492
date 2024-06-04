@@ -16,13 +16,7 @@ class ResNet50(nn.Module):
 
         self.is_classifier = is_classifier
         self.classifier = nn.Sequential(
-        nn.Linear(2048 * final_size * final_size, 4096),
-        nn.Dropout(dropout),
-        nn.ReLU(True),
-        nn.Linear(4096, 4096),
-        nn.Dropout(dropout),
-        nn.ReLU(True),
-        nn.Linear(4096, num_classes)
+        nn.Linear(2048 * final_size * final_size, num_classes),
         )
 
 

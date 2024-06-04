@@ -18,11 +18,14 @@ class Multimodal(nn.Module):
         print("IMAGE EMBEDDING: ", image_embedding)
         if image_embedding == "vgg11":
             self.image_embedding = VGGNet(num_classes=num_classes, config='vgg11', dropout=dropout, is_classifier=False)
+
         elif image_embedding == "vgg16":
             self.image_embedding = VGGNet(num_classes=num_classes, config='vgg16', dropout=dropout, is_classifier=False)
+
         elif image_embedding == "resnet":
             self.image_embedding = ResNet50(num_classes=num_classes, pretrained=False, is_classifier=False, dropout=dropout)
 
+        
 
         if freeze_cnn:
             for param in self.image_embedding.parameters():
@@ -35,9 +38,7 @@ class Multimodal(nn.Module):
         self.text_projector = ProjectionMLP(text_embedding_dim, hidden_dim, output_dim, is_text=True)
         
             
-        self.classifier =  nn.Sequential(nn.Linear(image_embedding_dim, 4096), nn.Dropout(dropout), nn.ReLU(True),
-                                nn.Linear(4096, 4096), nn.Dropout(dropout), nn.ReLU(True),
-                                nn.Linear(4096, num_classes))
+        self.classifier =  self.image_embedding.classifier
  
 
     def forward(self, image, texts):
