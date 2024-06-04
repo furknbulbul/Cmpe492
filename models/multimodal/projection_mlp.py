@@ -14,11 +14,6 @@ class ProjectionMLP(nn.Module):
         )
 
     def forward(self, x):
-        #return all the embeddings 
-        # if self.is_text:
-        #     batch_size, num_embeddings, embedding_dim = x.size()
-        #     x = x.view(batch_size * num_embeddings, -1)
-        #     x = self.projector(x)
-        #     return x.view(batch_size, num_embeddings, -1)
+
         x = x.view(x.size(0), -1)
         return self.projector(x)

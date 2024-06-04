@@ -37,7 +37,7 @@ class Multimodal(nn.Module):
 
         print("IMAGE EMBEDDING DIM: ", self.image_embedding_dim)
         self.image_projector = ProjectionMLP(image_embedding_dim, hidden_dim, output_dim)
-        self.text_projector = ProjectionMLP(text_embedding_dim, hidden_dim, output_dim, is_text=True)
+        self.text_projector = ProjectionMLP(text_embedding_dim * 7, hidden_dim, output_dim, is_text=True)
         
             
         self.classifier =  self.image_embedding.classifier

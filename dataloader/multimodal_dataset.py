@@ -17,6 +17,7 @@ class MultimodalDataset(Dataset):
         self.glove = GloVe(name='6B', dim=text_embedding_dim)
         self.labels_map = {'angry': 0, 'disgust': 1, 'fear': 2, 'happy': 3, 'sad': 4, 'surprise': 5, 'neutral': 6}
         self.texts = "angry disgust fear happy sad surprise neutral"
+        self.sentence = "this is a face image of {}"
         if self.phase == "train":
             self.phase_root = os.path.join(root, 'train')
         elif self.phase == "test":
@@ -39,8 +40,8 @@ class MultimodalDataset(Dataset):
         img_path, text = self.data[idx]
         label = self.labels_map[text]
 
-        #indices[0], indices[label] = indices[label], indices[0] # swap the first word with the label word
-        indices = torch.tensor([self.glove.stoi[text]])
+        
+        indices = torch.tensor([self.glove.stoi[t] for t in self.tokenizer(self.sentence.format(text))])
         #image = read_image(img_path).to(torch.float32)
         image = PIL.Image.open(img_path)
         if self.transform:

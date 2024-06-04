@@ -12,6 +12,6 @@ class WordEmbedding(nn.Module):
         self.embedding = nn.Embedding.from_pretrained(GloVe(name='6B', dim=embedding_dim).vectors, freeze = not trainable)
 
     def forward(self, x):
-        
+        print("X SHAPE: ", self.embedding(x).shape)
         return self.embedding(x)
 
